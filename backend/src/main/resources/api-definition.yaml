@@ -1,0 +1,404 @@
+openapi: 3.0.0
+info:
+  title: CSSE Healthcare API
+  description: |
+    Healthcare Management System API for managing users, doctors, and staff.
+    This API provides authentication and authorization capabilities along with
+    role-based access control for different user types.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@healthcare.com
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.healthcare.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and registration
+  - name: Doctors
+    description: Doctor management operations
+  - name: Staff
+    description: Staff management operations
+  - name: Users
+    description: User management operations
+  - name: Test
+    description: Test endpoints
+
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and return JWT token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: admin@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT access token
+                  role:
+                    type: string
+                    enum: [ADMIN, DOCTOR, STAFF, USER]
+                    description: User role
+                  email:
+                    type: string
+                    format: email
+        '401':
+          description: Invalid credentials
+        '500':
+          description: Server error
+
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      description: Register a new user in the system
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - fullName
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: newuser@example.com
+                password:
+                  type: string
+                  format: password
+                  example: securePassword123
+                fullName:
+                  type: string
+                  example: John Doe
+                role:
+                  type: string
+                  enum: [ADMIN, DOCTOR, STAFF, USER]
+                  example: USER
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User registered successfully
+        '400':
+          description: Invalid input or user already exists
+        '500':
+          description: Server error
+
+  /api/doctors:
+    get:
+      tags:
+        - Doctors
+      summary: Get all doctors
+      description: Retrieve a list of all doctors (requires authentication)
+      operationId: getAllDoctors
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Doctor'
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '500':
+          description: Server error
+
+  /api/doctors/{id}:
+    get:
+      tags:
+        - Doctors
+      summary: Get doctor by ID
+      description: Retrieve a specific doctor by their ID
+      operationId: getDoctorById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Doctor ID
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Doctor found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Doctor not found
+        '500':
+          description: Server error
+
+  /api/staff:
+    get:
+      tags:
+        - Staff
+      summary: Get all staff members
+      description: Retrieve a list of all staff members (requires authentication)
+      operationId: getAllStaff
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Staff'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+  /api/staff/{id}:
+    get:
+      tags:
+        - Staff
+      summary: Get staff by ID
+      description: Retrieve a specific staff member by their ID
+      operationId: getStaffById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Staff ID
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Staff found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Staff not found
+        '500':
+          description: Server error
+
+  /api/users:
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      description: Retrieve a list of all users (admin only)
+      operationId: getAllUsers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Admin access required
+        '500':
+          description: Server error
+
+  /api/users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Retrieve a specific user by their ID
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+        '500':
+          description: Server error
+
+  /test:
+    get:
+      tags:
+        - Test
+      summary: Public test endpoint
+      description: Test endpoint that doesn't require authentication
+      operationId: publicTest
+      responses:
+        '200':
+          description: Test successful
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Hello from CSSE Backend!
+
+  /api/test:
+    get:
+      tags:
+        - Test
+      summary: Authenticated test endpoint
+      description: Test endpoint that requires authentication
+      operationId: authenticatedTest
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Test successful
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Hello from secured endpoint!
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/auth/login endpoint
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        fullName:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          enum: [ADMIN, DOCTOR, STAFF, USER]
+          example: USER
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: doctor@example.com
+        fullName:
+          type: string
+          example: Dr. Jane Smith
+        specialization:
+          type: string
+          example: Cardiology
+        licenseNumber:
+          type: string
+          example: MD12345
+
+    Staff:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          format: email
+          example: staff@example.com
+        fullName:
+          type: string
+          example: Alice Johnson
+        department:
+          type: string
+          example: Administration
+        position:
+          type: string
+          example: Receptionist
+
+security:
+  - bearerAuth: []
